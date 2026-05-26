@@ -5,9 +5,12 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, LoginDto } from './dto/login.dto';
 import { User } from '../../entities/users.entity';
-
+import { GoogleGenAI } from '@google/genai';
 @Injectable()
 export class AuthService {
+   private readonly ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+  });
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -47,5 +50,13 @@ export class AuthService {
       passwordHash: hashedPassword,
     });
     return this.userRepository.save(user);
+  }
+
+  async generateAIResponse(prompt: string): Promise<any> {
+    const result = await this.ai.models.generateContent({
+      model: 'models/gemini-2.5-flash',
+      contents: prompt,
+    });
+    return result;
   }
 }
