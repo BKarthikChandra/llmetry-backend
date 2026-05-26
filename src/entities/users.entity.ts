@@ -9,7 +9,7 @@ export class User {
     @Column({name : 'email', type : 'varchar', unique : true})
     email!: string;
 
-    @Column({name : 'password', type : 'varchar'})
+    @Column({name : 'password', type : 'varchar', select : false})
     passwordHash!: string;
 
     @Column({name : 'created_on', type : 'timestamp', default : () => 'CURRENT_TIMESTAMP'})
