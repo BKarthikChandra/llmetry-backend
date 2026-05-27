@@ -19,9 +19,6 @@ export class ProviderModel {
   @Column({ name: 'user_provider_id' })
   userProviderId!: number;
 
-  @ManyToOne(() => UserProvider, (userProvider) => userProvider.providerModels)
-  @JoinColumn({ name: 'user_provider_id' })
-  userProvider!: UserProvider;
 
   @Column({ name: 'model', type: 'varchar' })
   model!: string;
@@ -35,4 +32,9 @@ export class ProviderModel {
 
   @OneToMany(() => ChatMessage, (message) => message.providerModel)
   chatMessages!: ChatMessage[];
+
+  
+  @ManyToOne(() => UserProvider, (userProvider) => userProvider.providerModels)
+  @JoinColumn({ name: 'user_provider_id' })
+  userProvider!: UserProvider;
 }
