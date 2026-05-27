@@ -1,11 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto , CreateUserDto } from './dto/login.dto';
-
+import { LoginDto, CreateUserDto } from './dto/login.dto';
 
 @ApiTags('auth')
 @ApiBearerAuth()
@@ -46,7 +58,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Generate AI response from prompt' })
   @ApiResponse({ status: 200, description: 'Returns AI-generated response' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiBody({ schema: { type: 'object', properties: { prompt: { type: 'string' } } } })
+  @ApiBody({
+    schema: { type: 'object', properties: { prompt: { type: 'string' } } },
+  })
   async generateAIResponse(@Body('prompt') prompt: string) {
     return this.authService.generateAIResponse(prompt);
   }

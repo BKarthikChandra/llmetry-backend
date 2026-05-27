@@ -8,7 +8,7 @@ import { User } from '../../entities/users.entity';
 import { GoogleGenAI } from '@google/genai';
 @Injectable()
 export class AuthService {
-   private readonly ai = new GoogleGenAI({
+  private readonly ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
   constructor(
