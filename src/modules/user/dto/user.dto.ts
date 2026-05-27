@@ -31,8 +31,21 @@ export class RegisteredProviderDto {
 }
 
 export class AddModelDto {
-  @ApiProperty({ description: 'Model identifier (e.g. gpt-4o, claude-opus-4-7)' })
+  @ApiProperty({
+    description: 'Model identifier (e.g. gpt-4o, claude-opus-4-7)',
+  })
   @IsString()
   @IsNotEmpty()
   model!: string;
+}
+
+export class ProviderModelDto {
+  @ApiProperty()
+  id!: number;
+
+  @ApiProperty()
+  model!: string;
+
+  @ApiProperty()
+  createdAt!: Date;
 }

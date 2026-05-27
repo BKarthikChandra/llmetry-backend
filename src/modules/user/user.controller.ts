@@ -17,7 +17,13 @@ import {
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { AddModelDto, ProviderDto, RegisteredProviderDto, RegisterProviderDto } from './dto/user.dto';
+import {
+  AddModelDto,
+  ProviderDto,
+  ProviderModelDto,
+  RegisteredProviderDto,
+  RegisterProviderDto,
+} from './dto/user.dto';
 import { UserService } from './user.service';
 
 @ApiTags('user')
@@ -29,15 +35,25 @@ export class UserController {
   @Public()
   @Get('providers')
   @ApiOperation({ summary: 'Get all available providers' })
-  @ApiResponse({ status: 200, description: 'List of available providers', type: [ProviderDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'List of available providers',
+    type: [ProviderDto],
+  })
   getProviders(): Promise<ProviderDto[]> {
     return this.userService.getProviders();
   }
 
   @Get('providers/registered')
   @ApiOperation({ summary: 'Get providers registered by the current user' })
-  @ApiResponse({ status: 200, description: 'List of registered providers', type: [RegisteredProviderDto] })
-  getRegisteredProviders(@CurrentUser() user: JwtUser): Promise<RegisteredProviderDto[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'List of registered providers',
+    type: [RegisteredProviderDto],
+  })
+  getRegisteredProviders(
+    @CurrentUser() user: JwtUser,
+  ): Promise<RegisteredProviderDto[]> {
     return this.userService.getRegisteredProviders(user.id);
   }
 
@@ -50,15 +66,33 @@ export class UserController {
     @Param('id', ParseIntPipe) providerId: number,
     @Body() dto: RegisterProviderDto,
     @CurrentUser() user: JwtUser,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     return this.userService.registerProvider(user.id, providerId, dto);
+  }
+
+  @Get('providers/:id/models')
+  @ApiOperation({ summary: 'Get configured models for a registered provider' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of configured models',
+    type: [ProviderModelDto],
+  })
+  @ApiResponse({ status: 404, description: 'Provider not registered' })
+  getModels(
+    @Param('id', ParseIntPipe) providerId: number,
+    @CurrentUser() user: JwtUser,
+  ): Promise<ProviderModelDto[]> {
+    return this.userService.getModels(user.id, providerId);
   }
 
   @Post('providers/:id/models')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add a model under a registered provider' })
   @ApiResponse({ status: 201, description: 'Model added successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid model — response includes availableModels list' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid model — response includes availableModels list',
+  })
   @ApiResponse({ status: 404, description: 'Provider not registered' })
   @ApiResponse({ status: 409, description: 'Model already configured' })
   addModel(

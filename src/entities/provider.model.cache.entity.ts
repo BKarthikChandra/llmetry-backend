@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Provider } from './provider.entity';
 
 @Entity({ name: 'provider_model_cache' })
@@ -16,6 +22,10 @@ export class ProviderModelCache {
   @Column({ name: 'models', type: 'jsonb' })
   models!: string[];
 
-  @Column({ name: 'cached_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'cached_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   cachedAt!: Date;
 }
