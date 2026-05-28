@@ -163,7 +163,40 @@ export class AnalyticsService {
     }));
   }
 
-  // ── 4. Error dashboard ───────────────────────────────────────────────────────
+  // ── 4. Throughput dashboard ──────────────────────────────────────────────────
+
+  async getThroughput(userId: number, filter: LatencyFilterDto) {
+    const interval = filter.interval ?? LatencyInterval.DAY;
+
+    const rows = await this.applyFilters(this.baseQuery(userId), filter)
+      .select(`DATE_TRUNC('${interval}', il.created_at)`, 'bucket')
+      .addSelect('COUNT(*)', 'totalRequests')
+      .addSelect(
+        "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
+        'successfulRequests',
+      )
+      .addSelect(
+        "SUM(CASE WHEN il.status = 'error' THEN 1 ELSE 0 END)",
+        'failedRequests',
+      )
+      .groupBy(`DATE_TRUNC('${interval}', il.created_at)`)
+      .orderBy(`DATE_TRUNC('${interval}', il.created_at)`, 'ASC')
+      .getRawMany<{
+        bucket: string;
+        totalRequests: string;
+        successfulRequests: string;
+        failedRequests: string;
+      }>();
+
+    return rows.map((r) => ({
+      bucket: r.bucket,
+      totalRequests: parseInt(r.totalRequests) || 0,
+      successfulRequests: parseInt(r.successfulRequests) || 0,
+      failedRequests: parseInt(r.failedRequests) || 0,
+    }));
+  }
+
+  // ── 5. Error dashboard ───────────────────────────────────────────────────────
 
   async getErrors(userId: number, filter: AnalyticsFilterDto) {
     const errorBase = () =>
