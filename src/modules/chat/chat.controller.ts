@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseIntPipe,
   Post,
@@ -14,6 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ChatMessage } from '../../entities/chat.message.entity';
 
 import { ChatService } from './chat.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -24,25 +26,39 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+  @Get('/:chatId/messages')
+  @ApiOperation({ summary: 'Get all messages for a chat' })
+  @ApiParam({ name: 'chatId', type: Number, description: 'ID of the chat' })
+  @ApiResponse({ status: 200, description: 'Messages ordered by createdAt ASC' })
+  @ApiResponse({ status: 403, description: 'Chat does not belong to the authenticated user' })
+  @ApiResponse({ status: 404, description: 'Chat not found' })
+  getMessages(
+    @Param('chatId', ParseIntPipe) chatId: number,
+    @CurrentUser('id') userId: number,
+  ): Promise<ChatMessage[]> {
+    return this.chatService.getMessages(userId, chatId);
+  }
+
   @Post('/:modelId/send')
   @ApiOperation({
     summary: 'Send message to AI model',
-    description: 'Sends a user message to the selected AI model and returns the response.',
+    description:
+      'Sends a user message to the selected AI model and returns the response. ' +
+      'Pass chatId to continue an existing conversation; omit it to start a new one. ' +
+      'The response always includes the chatId to use in subsequent turns.',
   })
   @ApiParam({
     name: 'modelId',
     type: Number,
     example: 1,
-    description: 'AI model ID',
+    description: 'ID of the ProviderModel to use',
   })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        message: {
-          type: 'string',
-          example: 'Hello AI',
-        },
+        message: { type: 'string', example: 'Hello!' },
+        chatId: { type: 'number', example: 42, description: 'Omit to start a new chat' },
       },
       required: ['message'],
     },
@@ -53,6 +69,7 @@ export class ChatController {
     schema: {
       example: {
         response: 'Hello! How can I help you?',
+        chatId: 42,
       },
     },
   })
@@ -60,7 +77,8 @@ export class ChatController {
     @Param('modelId', ParseIntPipe) modelId: number,
     @CurrentUser('id') userId: number,
     @Body('message') message: string,
-  ): Promise<{ response: string }> {
-    return this.chatService.sendMessage(userId, modelId, message);
+    @Body('chatId') chatId?: number,
+  ): Promise<{ response: string; chatId: number }> {
+    return this.chatService.sendMessage(userId, modelId, message, chatId);
   }
 }

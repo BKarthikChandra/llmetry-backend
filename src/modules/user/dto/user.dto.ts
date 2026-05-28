@@ -49,3 +49,14 @@ export class ProviderModelDto {
   @ApiProperty()
   createdAt!: Date;
 }
+
+export class ChatSummaryDto {
+  @ApiProperty()
+  chatId!: number;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  @ApiProperty({ nullable: true })
+  title!: string | null;
+}

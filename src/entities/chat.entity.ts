@@ -32,6 +32,9 @@ export class Chat {
   @Column({ name: 'summary_so_far', type: 'text', nullable: true })
   summarySoFar!: string | null;
 
+  @Column({ name: 'summarized_count', type: 'int', default: 0 })
+  summarizedCount!: number;
+
   @OneToMany(() => ChatMessage, (message) => message.chat)
   messages!: ChatMessage[];
 

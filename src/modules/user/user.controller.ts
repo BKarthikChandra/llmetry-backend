@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
+
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -19,6 +20,7 @@ import type { JwtUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import {
   AddModelDto,
+  ChatSummaryDto,
   ProviderDto,
   ProviderModelDto,
   RegisteredProviderDto,
@@ -31,6 +33,17 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('chats')
+  @ApiOperation({ summary: 'Get all chats for the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of chats with title derived from the first user message',
+    type: [ChatSummaryDto],
+  })
+  getUserChats(@CurrentUser() user: JwtUser): Promise<ChatSummaryDto[]> {
+    return this.userService.getUserChats(user.id);
+  }
 
   @Public()
   @Get('providers')

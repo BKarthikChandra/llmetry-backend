@@ -4,6 +4,8 @@ import { Provider } from '../../entities/provider.entity';
 import { ProviderModel } from '../../entities/provider.model.entity';
 import { ProviderModelCache } from '../../entities/provider.model.cache.entity';
 import { UserProvider } from '../../entities/user.provider.entity';
+import { Chat } from '../../entities/chat.entity';
+import { ChatMessage } from '../../entities/chat.message.entity';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -14,6 +16,8 @@ import { UserService } from './user.service';
       UserProvider,
       ProviderModel,
       ProviderModelCache,
+      Chat,
+      ChatMessage,
     ]),
   ],
   controllers: [UserController],

@@ -12,9 +12,12 @@ import { Provider } from '../../entities/provider.entity';
 import { UserProvider } from '../../entities/user.provider.entity';
 import { ProviderModel } from '../../entities/provider.model.entity';
 import { ProviderModelCache } from '../../entities/provider.model.cache.entity';
+import { Chat } from '../../entities/chat.entity';
+import { ChatMessage } from '../../entities/chat.message.entity';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import {
   AddModelDto,
+  ChatSummaryDto,
   ProviderDto,
   ProviderModelDto,
   RegisteredProviderDto,
@@ -40,6 +43,10 @@ export class UserService {
     private providerModelRepository: Repository<ProviderModel>,
     @InjectRepository(ProviderModelCache)
     private cacheRepository: Repository<ProviderModelCache>,
+    @InjectRepository(Chat)
+    private chatRepository: Repository<Chat>,
+    @InjectRepository(ChatMessage)
+    private chatMessageRepository: Repository<ChatMessage>,
   ) {}
 
   async getProviders(): Promise<ProviderDto[]> {
@@ -47,6 +54,33 @@ export class UserService {
     const providers = await this.providerRepository.find();
     this.logger.log(`Returning ${providers.length} providers`);
     return providers.map((p) => ({ id: p.id, displayName: p.displayName }));
+  }
+
+  async getUserChats(userId: number): Promise<ChatSummaryDto[]> {
+    const rows = await this.chatRepository
+      .createQueryBuilder('chat')
+      .select('chat.id', 'chatId')
+      .addSelect('chat.createdAt', 'createdAt')
+      .addSelect(
+        (qb) =>
+          qb
+            .select('msg.content')
+            .from(ChatMessage, 'msg')
+            .where('msg.chatId = chat.id')
+            .andWhere("msg.sender = 'user'")
+            .orderBy('msg.createdAt', 'ASC')
+            .limit(1),
+        'title',
+      )
+      .where('chat.userId = :userId', { userId })
+      .orderBy('chat.createdAt', 'DESC')
+      .getRawMany<{ chatId: number; createdAt: Date; title: string | null }>();
+
+    return rows.map((row) => ({
+      chatId: row.chatId,
+      createdAt: row.createdAt,
+      title: row.title ?? null,
+    }));
   }
 
   async registerProvider(
