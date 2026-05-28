@@ -1,7 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GoogleGenAI } from '@google/genai';
 
 import { Provider } from '../../entities/provider.entity';
 import { ProviderModel } from '../../entities/provider.model.entity';
@@ -9,6 +8,8 @@ import { Chat } from '../../entities/chat.entity';
 import { ChatMessage } from '../../entities/chat.message.entity';
 import { InferenceLog } from '../../entities/inference.logs.entity';
 import { decrypt } from '../../common/utils/encryption.util';
+import { LlmMessage } from './providers/llm-provider.interface';
+import { getProvider } from './providers/provider.factory';
 
 const CONTEXT_WINDOW = 20;
 
@@ -77,61 +78,42 @@ export class ChatService {
         // 4. Build context for the provider:
         //    [summary block if exists] + [last 20 prior messages] + [current user message]
         const windowMessages = priorMessages.slice(-CONTEXT_WINDOW);
-        const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+        const messages: LlmMessage[] = [];
 
         if (chat.summarySoFar) {
             // Inject summary as a synthetic exchange so the model treats it as established context
-            contents.push({
+            messages.push({
                 role: 'user',
-                parts: [{ text: `[Summary of earlier conversation]\n${chat.summarySoFar}` }],
+                content: `[Summary of earlier conversation]\n${chat.summarySoFar}`,
             });
-            contents.push({
-                role: 'model',
-                parts: [{ text: 'Understood. I have the context from the earlier conversation.' }],
+            messages.push({
+                role: 'assistant',
+                content: 'Understood. I have the context from the earlier conversation.',
             });
         }
 
         for (const msg of windowMessages) {
-            contents.push({
-                role: msg.sender === 'ai' ? 'model' : 'user',
-                parts: [{ text: msg.content ?? '' }],
+            messages.push({
+                role: msg.sender === 'ai' ? 'assistant' : 'user',
+                content: msg.content ?? '',
             });
         }
 
-        contents.push({ role: 'user', parts: [{ text: message }] });
+        messages.push({ role: 'user', content: message });
 
         // 5. Call the provider
         const providerName = providerModel.userProvider.provider.name;
         const apiKey = decrypt(providerModel.userProvider.apiKey, process.env.ENCRYPTION_KEY!);
-        const startTime = Date.now();
 
-        let responseText = '';
-        let inputTokens = 0;
-        let outputTokens = 0;
-        let totalTokens = 0;
-        let status: 'success' | 'error' = 'success';
-        let errorMessage: string | null = null;
-
-        try {
-            if (providerName === 'gemini') {
-                const ai = new GoogleGenAI({ apiKey });
-                const result = await ai.models.generateContent({
-                    model: `models/${providerModel.model}`,
-                    contents,
-                });
-                responseText = result.text ?? '';
-                inputTokens = result.usageMetadata?.promptTokenCount ?? 0;
-                outputTokens = result.usageMetadata?.candidatesTokenCount ?? 0;
-                totalTokens = result.usageMetadata?.totalTokenCount ?? 0;
-            } else {
-                throw new Error(`Provider '${providerName}' is not yet supported`);
-            }
-        } catch (err) {
-            status = 'error';
-            errorMessage = (err as Error).message;
-        }
-
-        const latencyMs = Date.now() - startTime;
+        const {
+            text: responseText,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+            latencyMs,
+            status,
+            errorMessage,
+        } = await getProvider(providerName).chat(messages, providerModel.model, apiKey);
 
         // 6. Save the AI turn
         const aiMessage = this.chatMessageRepository.create({
@@ -214,18 +196,11 @@ export class ChatService {
             : `Summarize the following conversation messages concisely. Return only the summary text, no preamble.\n\n${messageBlock}`;
 
         try {
-            if (providerName === 'gemini') {
-                const ai = new GoogleGenAI({ apiKey });
-                const result = await ai.models.generateContent({
-                    model: `models/${model}`,
-                    contents: prompt,
-                });
-                const newSummary = result.text?.trim();
-                if (newSummary) {
-                    chat.summarySoFar = newSummary;
-                    chat.summarizedCount = newOverflowCount;
-                    await this.chatRepository.save(chat);
-                }
+            const newSummary = await getProvider(providerName).summarize(prompt, model, apiKey);
+            if (newSummary) {
+                chat.summarySoFar = newSummary;
+                chat.summarizedCount = newOverflowCount;
+                await this.chatRepository.save(chat);
             }
         } catch {
             // Summarization failure is non-fatal — the chat continues without the updated summary

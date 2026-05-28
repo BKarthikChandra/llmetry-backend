@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import {
@@ -12,6 +13,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -53,12 +55,18 @@ export class ChatController {
     example: 1,
     description: 'ID of the ProviderModel to use',
   })
+  @ApiQuery({
+    name: 'chatId',
+    required: false,
+    type: Number,
+    example: 42,
+    description: 'Omit to start a new chat',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'Hello!' },
-        chatId: { type: 'number', example: 42, description: 'Omit to start a new chat' },
       },
       required: ['message'],
     },
@@ -77,7 +85,7 @@ export class ChatController {
     @Param('modelId', ParseIntPipe) modelId: number,
     @CurrentUser('id') userId: number,
     @Body('message') message: string,
-    @Body('chatId') chatId?: number,
+    @Query('chatId', new ParseIntPipe({ optional: true })) chatId?: number,
   ): Promise<{ response: string; chatId: number }> {
     return this.chatService.sendMessage(userId, modelId, message, chatId);
   }
