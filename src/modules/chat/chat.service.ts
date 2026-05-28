@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -158,7 +158,7 @@ export class ChatService {
             );
         }
 
-        if (status === 'error') throw new Error(errorMessage!);
+        if (status === 'error') throw new BadGatewayException(errorMessage);
 
         return { response: responseText, chatId: chat.id };
     }

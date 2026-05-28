@@ -21,6 +21,12 @@ export class GeminiProvider implements ILlmProvider {
                 errorMessage: null,
             };
         } catch (err) {
+            const raw = (err as Error).message;
+            let errorMessage = raw;
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed?.error?.message) errorMessage = parsed.error.message;
+            } catch { /* not JSON — use raw */ }
             return {
                 text: '',
                 inputTokens: 0,
@@ -28,7 +34,7 @@ export class GeminiProvider implements ILlmProvider {
                 totalTokens: 0,
                 latencyMs: Date.now() - start,
                 status: 'error',
-                errorMessage: (err as Error).message,
+                errorMessage,
             };
         }
     }
