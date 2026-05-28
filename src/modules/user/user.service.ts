@@ -129,7 +129,7 @@ export class UserService {
       `User ${userId} has ${records.length} registered provider(s)`,
     );
     return records.map((up) => ({
-      id: up.id,
+      id: up.providerId,
       name: up.provider.name,
       displayName: up.provider.displayName,
       registeredAt: up.createdAt,

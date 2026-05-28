@@ -129,6 +129,8 @@ export class ChatService {
             this.inferenceLogRepository.create({
                 chatId: chat.id,
                 messageId: aiMessage.id,
+                providerId: providerModel.userProvider.providerId,
+                providerModelId: modelId,
                 provider: providerName,
                 model: providerModel.model,
                 inputTokens,

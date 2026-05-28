@@ -5,6 +5,8 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { InferenceLog } from '../../entities/inference.logs.entity';
 import {
   AnalyticsFilterDto,
+  ComparisonFilterDto,
+  ComparisonType,
   LatencyFilterDto,
   LatencyInterval,
 } from './dto/analytics-filter.dto';
@@ -16,6 +18,8 @@ export class AnalyticsService {
     private readonly inferenceLogRepo: Repository<InferenceLog>,
   ) {}
 
+  // ── base query ──────────────────────────────────────────────────────────────
+
   private baseQuery(userId: number): SelectQueryBuilder<InferenceLog> {
     return this.inferenceLogRepo
       .createQueryBuilder('il')
@@ -23,15 +27,19 @@ export class AnalyticsService {
       .where('chat.userId = :userId', { userId });
   }
 
+  // ── filter application ───────────────────────────────────────────────────────
+
   private applyFilters(
     qb: SelectQueryBuilder<InferenceLog>,
     filter: AnalyticsFilterDto,
   ): SelectQueryBuilder<InferenceLog> {
-    if (filter.provider) {
-      qb.andWhere('il.provider = :provider', { provider: filter.provider });
+    if (filter.providerId) {
+      qb.andWhere('il.providerId = :providerId', { providerId: filter.providerId });
     }
-    if (filter.model) {
-      qb.andWhere('il.model = :model', { model: filter.model });
+    if (filter.providerModelId) {
+      qb.andWhere('il.providerModelId = :providerModelId', {
+        providerModelId: filter.providerModelId,
+      });
     }
     if (filter.from) {
       qb.andWhere('il.createdAt >= :from', { from: new Date(filter.from) });
@@ -42,8 +50,14 @@ export class AnalyticsService {
     return qb;
   }
 
-  async getOverview(userId: number, filter: AnalyticsFilterDto) {
-    const raw = await this.applyFilters(this.baseQuery(userId), filter)
+  // ── shared aggregation selects ───────────────────────────────────────────────
+
+  // .select() on the first call clears the default entity-column projection so
+  // PostgreSQL does not complain about ungrouped columns alongside aggregates.
+  private addAggregates(
+    qb: SelectQueryBuilder<InferenceLog>,
+  ): SelectQueryBuilder<InferenceLog> {
+    return qb
       .select('COUNT(*)', 'totalRequests')
       .addSelect(
         "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
@@ -54,9 +68,27 @@ export class AnalyticsService {
         'failedRequests',
       )
       .addSelect('AVG(il.latency_ms)', 'averageLatencyMs')
+      .addSelect('SUM(il.total_tokens)', 'totalTokens');
+  }
+
+  private parseAggregates(r: Record<string, string>) {
+    return {
+      totalRequests: parseInt(r.totalRequests) || 0,
+      successfulRequests: parseInt(r.successfulRequests) || 0,
+      failedRequests: parseInt(r.failedRequests) || 0,
+      averageLatencyMs: parseFloat(r.averageLatencyMs) || 0,
+      totalTokens: parseInt(r.totalTokens) || 0,
+    };
+  }
+
+  // ── 1. Overview dashboard ────────────────────────────────────────────────────
+
+  async getOverview(userId: number, filter: AnalyticsFilterDto) {
+    const raw = await this.addAggregates(
+      this.applyFilters(this.baseQuery(userId), filter),
+    )
       .addSelect('SUM(il.input_tokens)', 'totalInputTokens')
       .addSelect('SUM(il.output_tokens)', 'totalOutputTokens')
-      .addSelect('SUM(il.total_tokens)', 'totalTokens')
       .getRawOne<Record<string, string>>();
 
     return {
@@ -70,64 +102,44 @@ export class AnalyticsService {
     };
   }
 
-  async getProviderBreakdown(userId: number, filter: AnalyticsFilterDto) {
-    const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select('il.provider', 'provider')
-      .addSelect('COUNT(*)', 'totalRequests')
-      .addSelect(
-        "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
-        'successfulRequests',
-      )
-      .addSelect(
-        "SUM(CASE WHEN il.status = 'error' THEN 1 ELSE 0 END)",
-        'failedRequests',
-      )
-      .addSelect('AVG(il.latency_ms)', 'averageLatencyMs')
-      .addSelect('SUM(il.total_tokens)', 'totalTokens')
-      .groupBy('il.provider')
-      .orderBy('COUNT(*)', 'DESC')
-      .getRawMany<Record<string, string>>();
+  // ── 2. Comparison dashboard ──────────────────────────────────────────────────
+  // comparisonType=provider  → group by provider
+  // comparisonType=model     → group by provider + model
 
-    return rows.map((r) => ({
-      provider: r.provider,
-      totalRequests: parseInt(r.totalRequests) || 0,
-      successfulRequests: parseInt(r.successfulRequests) || 0,
-      failedRequests: parseInt(r.failedRequests) || 0,
-      averageLatencyMs: parseFloat(r.averageLatencyMs) || 0,
-      totalTokens: parseInt(r.totalTokens) || 0,
-    }));
-  }
+  async getComparison(userId: number, filter: ComparisonFilterDto) {
+    const type = filter.comparisonType ?? ComparisonType.PROVIDER;
+    const qb = this.applyFilters(this.baseQuery(userId), filter);
 
-  async getModelBreakdown(userId: number, filter: AnalyticsFilterDto) {
-    const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select('il.provider', 'provider')
+    if (type === ComparisonType.PROVIDER) {
+      const rows = await this.addAggregates(qb)
+        .addSelect('il.provider', 'provider')
+        .groupBy('il.provider')
+        .orderBy('"totalRequests"', 'DESC')
+        .getRawMany<Record<string, string>>();
+
+      return rows.map((r) => ({
+        provider: r.provider,
+        ...this.parseAggregates(r),
+      }));
+    }
+
+    // model comparison — group by provider + model
+    const rows = await this.addAggregates(qb)
+      .addSelect('il.provider', 'provider')
       .addSelect('il.model', 'model')
-      .addSelect('COUNT(*)', 'totalRequests')
-      .addSelect(
-        "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
-        'successfulRequests',
-      )
-      .addSelect(
-        "SUM(CASE WHEN il.status = 'error' THEN 1 ELSE 0 END)",
-        'failedRequests',
-      )
-      .addSelect('AVG(il.latency_ms)', 'averageLatencyMs')
-      .addSelect('SUM(il.total_tokens)', 'totalTokens')
       .groupBy('il.provider')
       .addGroupBy('il.model')
-      .orderBy('COUNT(*)', 'DESC')
+      .orderBy('"totalRequests"', 'DESC')
       .getRawMany<Record<string, string>>();
 
     return rows.map((r) => ({
       provider: r.provider,
       model: r.model,
-      totalRequests: parseInt(r.totalRequests) || 0,
-      successfulRequests: parseInt(r.successfulRequests) || 0,
-      failedRequests: parseInt(r.failedRequests) || 0,
-      averageLatencyMs: parseFloat(r.averageLatencyMs) || 0,
-      totalTokens: parseInt(r.totalTokens) || 0,
+      ...this.parseAggregates(r),
     }));
   }
+
+  // ── 3. Latency trend dashboard ───────────────────────────────────────────────
 
   async getLatencyTrend(userId: number, filter: LatencyFilterDto) {
     const interval = filter.interval ?? LatencyInterval.DAY;
@@ -151,6 +163,8 @@ export class AnalyticsService {
     }));
   }
 
+  // ── 4. Error dashboard ───────────────────────────────────────────────────────
+
   async getErrors(userId: number, filter: AnalyticsFilterDto) {
     const errorBase = () =>
       this.applyFilters(this.baseQuery(userId), filter).andWhere(
@@ -166,7 +180,7 @@ export class AnalyticsService {
         .select('il.provider', 'provider')
         .addSelect('COUNT(*)', 'count')
         .groupBy('il.provider')
-        .orderBy('COUNT(*)', 'DESC')
+        .orderBy('"count"', 'DESC')
         .getRawMany<{ provider: string; count: string }>(),
 
       errorBase()

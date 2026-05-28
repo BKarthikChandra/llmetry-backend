@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 import { Chat } from './chat.entity';
 import { ChatMessage } from './chat.message.entity';
+import { Provider } from './provider.entity';
+import { ProviderModel } from './provider.model.entity';
 
 @Entity()
 export class InferenceLog {
@@ -26,6 +28,20 @@ export class InferenceLog {
   @ManyToOne(() => ChatMessage, (message) => message.inferenceLogs)
   @JoinColumn({ name: 'message_id' })
   message!: ChatMessage;
+
+  @Column({ name: 'provider_id', nullable: true })
+  providerId!: number | null;
+
+  @ManyToOne(() => Provider, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'provider_id' })
+  providerEntity?: Provider;
+
+  @Column({ name: 'provider_model_id', nullable: true })
+  providerModelId!: number | null;
+
+  @ManyToOne(() => ProviderModel, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'provider_model_id' })
+  providerModel?: ProviderModel;
 
   @Column({ name: 'provider', length: 100 })
   provider!: string;
