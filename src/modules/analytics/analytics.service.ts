@@ -31,7 +31,12 @@ export class AnalyticsService {
 
   private applyFilters(
     qb: SelectQueryBuilder<InferenceLog>,
-    filter: AnalyticsFilterDto,
+    filter: {
+      providerId?: number;
+      providerModelId?: number;
+      from?: string;
+      to?: string;
+    },
   ): SelectQueryBuilder<InferenceLog> {
     if (filter.providerId) {
       qb.andWhere('il.providerId = :providerId', {

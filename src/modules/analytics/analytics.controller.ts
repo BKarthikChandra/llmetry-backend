@@ -195,7 +195,70 @@ export class AnalyticsController {
     return this.analyticsService.getLatencyTrend(userId, filter);
   }
 
-  // ── 4. Error dashboard ───────────────────────────────────────────────────────
+  // ── 4. Throughput dashboard ──────────────────────────────────────────────────
+
+  @Get('throughput')
+  @ApiOperation({
+    summary: 'Throughput trend dashboard',
+    description:
+      'Request volume (total, successful, failed) bucketed by hour or day. ' +
+      'Defaults to daily buckets when interval is omitted.',
+  })
+  @ApiQuery({ name: 'providerId', required: false, type: Number, example: 1 })
+  @ApiQuery({
+    name: 'providerModelId',
+    required: false,
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    example: '2025-12-31',
+  })
+  @ApiQuery({
+    name: 'interval',
+    required: false,
+    enum: LatencyInterval,
+    example: LatencyInterval.DAY,
+    description: 'Bucketing granularity — hour or day (default: day)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Time-bucketed request volume',
+    schema: {
+      example: [
+        {
+          bucket: '2025-05-01T00:00:00.000Z',
+          totalRequests: 42,
+          successfulRequests: 40,
+          failedRequests: 2,
+        },
+        {
+          bucket: '2025-05-02T00:00:00.000Z',
+          totalRequests: 38,
+          successfulRequests: 35,
+          failedRequests: 3,
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  getThroughput(
+    @CurrentUser('id') userId: number,
+    @Query() filter: LatencyFilterDto,
+  ) {
+    return this.analyticsService.getThroughput(userId, filter);
+  }
+
+  // ── 5. Error dashboard ───────────────────────────────────────────────────────
 
   @Get('errors')
   @ApiOperation({
