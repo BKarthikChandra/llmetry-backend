@@ -13,24 +13,36 @@ export enum ComparisonType {
 }
 
 export class AnalyticsFilterDto {
-  @ApiPropertyOptional({ example: 1, description: 'Filter by registered provider ID' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Filter by registered provider ID',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   providerId?: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'Filter by provider model ID' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Filter by provider model ID',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   providerModelId?: number;
 
-  @ApiPropertyOptional({ example: '2025-01-01', description: 'Start of date range (ISO 8601)' })
+  @ApiPropertyOptional({
+    example: '2025-01-01',
+    description: 'Start of date range (ISO 8601)',
+  })
   @IsOptional()
   @IsDateString()
   from?: string;
 
-  @ApiPropertyOptional({ example: '2025-12-31', description: 'End of date range (ISO 8601)' })
+  @ApiPropertyOptional({
+    example: '2025-12-31',
+    description: 'End of date range (ISO 8601)',
+  })
   @IsOptional()
   @IsDateString()
   to?: string;

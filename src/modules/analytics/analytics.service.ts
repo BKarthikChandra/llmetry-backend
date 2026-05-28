@@ -34,7 +34,9 @@ export class AnalyticsService {
     filter: AnalyticsFilterDto,
   ): SelectQueryBuilder<InferenceLog> {
     if (filter.providerId) {
-      qb.andWhere('il.providerId = :providerId', { providerId: filter.providerId });
+      qb.andWhere('il.providerId = :providerId', {
+        providerId: filter.providerId,
+      });
     }
     if (filter.providerModelId) {
       qb.andWhere('il.providerModelId = :providerModelId', {
@@ -205,9 +207,7 @@ export class AnalyticsService {
       );
 
     const [totalRaw, byProviderRows, recentRows] = await Promise.all([
-      errorBase()
-        .select('COUNT(*)', 'total')
-        .getRawOne<{ total: string }>(),
+      errorBase().select('COUNT(*)', 'total').getRawOne<{ total: string }>(),
 
       errorBase()
         .select('il.provider', 'provider')

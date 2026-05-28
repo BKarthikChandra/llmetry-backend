@@ -33,9 +33,24 @@ export class AnalyticsController {
       'models for the authenticated user. All filters are optional and can be combined.',
   })
   @ApiQuery({ name: 'providerId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'providerModelId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'from', required: false, type: String, example: '2025-01-01' })
-  @ApiQuery({ name: 'to', required: false, type: String, example: '2025-12-31' })
+  @ApiQuery({
+    name: 'providerModelId',
+    required: false,
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    example: '2025-12-31',
+  })
   @ApiResponse({
     status: 200,
     description: 'Overview statistics',
@@ -76,9 +91,24 @@ export class AnalyticsController {
     example: ComparisonType.PROVIDER,
   })
   @ApiQuery({ name: 'providerId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'providerModelId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'from', required: false, type: String, example: '2025-01-01' })
-  @ApiQuery({ name: 'to', required: false, type: String, example: '2025-12-31' })
+  @ApiQuery({
+    name: 'providerModelId',
+    required: false,
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    example: '2025-12-31',
+  })
   @ApiResponse({
     status: 200,
     description: 'Per-provider or per-model comparison',
@@ -114,9 +144,24 @@ export class AnalyticsController {
       'Defaults to daily buckets when interval is omitted.',
   })
   @ApiQuery({ name: 'providerId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'providerModelId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'from', required: false, type: String, example: '2025-01-01' })
-  @ApiQuery({ name: 'to', required: false, type: String, example: '2025-12-31' })
+  @ApiQuery({
+    name: 'providerModelId',
+    required: false,
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    example: '2025-12-31',
+  })
   @ApiQuery({
     name: 'interval',
     required: false,
@@ -129,8 +174,16 @@ export class AnalyticsController {
     description: 'Time-bucketed latency trend',
     schema: {
       example: [
-        { bucket: '2025-05-01T00:00:00.000Z', averageLatencyMs: 790.4, totalRequests: 42 },
-        { bucket: '2025-05-02T00:00:00.000Z', averageLatencyMs: 831.1, totalRequests: 38 },
+        {
+          bucket: '2025-05-01T00:00:00.000Z',
+          averageLatencyMs: 790.4,
+          totalRequests: 42,
+        },
+        {
+          bucket: '2025-05-02T00:00:00.000Z',
+          averageLatencyMs: 831.1,
+          totalRequests: 38,
+        },
       ],
     },
   })
@@ -152,9 +205,24 @@ export class AnalyticsController {
       'for the authenticated user. Only inference logs with status = "error" are included.',
   })
   @ApiQuery({ name: 'providerId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'providerModelId', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'from', required: false, type: String, example: '2025-01-01' })
-  @ApiQuery({ name: 'to', required: false, type: String, example: '2025-12-31' })
+  @ApiQuery({
+    name: 'providerModelId',
+    required: false,
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    example: '2025-12-31',
+  })
   @ApiResponse({
     status: 200,
     description: 'Error analytics',

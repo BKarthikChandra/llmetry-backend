@@ -31,8 +31,14 @@ export class ChatController {
   @Get('/:chatId/messages')
   @ApiOperation({ summary: 'Get all messages for a chat' })
   @ApiParam({ name: 'chatId', type: Number, description: 'ID of the chat' })
-  @ApiResponse({ status: 200, description: 'Messages ordered by createdAt ASC' })
-  @ApiResponse({ status: 403, description: 'Chat does not belong to the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Messages ordered by createdAt ASC',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Chat does not belong to the authenticated user',
+  })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   getMessages(
     @Param('chatId', ParseIntPipe) chatId: number,
