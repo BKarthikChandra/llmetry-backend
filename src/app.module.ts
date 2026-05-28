@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { typeOrmAsyncConfig } from './config/database.config';
 import { UserModule } from './modules/user/user.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ChatModule } from './modules/chat/chat.module';
     AuthModule,
     UserModule,
     ChatModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
