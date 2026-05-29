@@ -90,6 +90,14 @@ export class UserService {
   ): Promise<{ message: string }> {
     this.logger.log(`User ${userId} registering provider ${providerId}`);
 
+    const provider = await this.providerRepository.findOne({
+      where: { id: providerId },
+    });
+
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+
     const existing = await this.userProviderRepository.findOne({
       where: { userId, providerId },
     });
@@ -101,6 +109,16 @@ export class UserService {
       throw new ConflictException('Provider already registered');
     }
 
+    this.logger.log(`Verifying API key for provider '${provider.name}'`);
+    let models: string[];
+    try {
+      models = await this.fetchModelsFromProvider(provider.name, dto.apiKey);
+    } catch {
+      throw new BadGatewayException(
+        `Invalid API key. Could not connect to ${provider.displayName}.`,
+      );
+    }
+
     const encryptedKey = encrypt(dto.apiKey, process.env.ENCRYPTION_KEY!);
 
     await this.userProviderRepository.save(
@@ -110,6 +128,13 @@ export class UserService {
         apiKey: encryptedKey,
       }),
     );
+
+    const now = Date.now();
+    await this.cacheRepository.upsert(
+      { providerId, models, cachedAt: new Date() },
+      ['providerId'],
+    );
+    this.memoryCache.set(providerId, { models, cachedAt: now });
 
     this.logger.log(
       `User ${userId} successfully registered provider ${providerId}`,
