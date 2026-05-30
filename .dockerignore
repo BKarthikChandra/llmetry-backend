@@ -1,0 +1,47 @@
+# ─── Node artifacts (reinstalled inside the image) ───────────────────────────
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── TypeScript build output (rebuilt inside the image) ───────────────────────
+dist
+build
+
+# ─── Secrets (must never bake into the image layer) ───────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Test code (excluded from tsconfig.build.json, no value in image) ─────────
+test
+coverage
+**/*.spec.ts
+**/*.e2e-spec.ts
+
+# ─── Version control ──────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitkeep
+
+# ─── OS / editor artifacts ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ─── Docs (not needed at runtime) ─────────────────────────────────────────────
+README.md
+API_DOC.md
+IMPLEMENTATION.md
+
+# ─── Linting / formatting (not needed at runtime) ─────────────────────────────
+.prettierrc
+eslint.config.mjs
+
+# NOTE: tsconfig.json, tsconfig.build.json, and nest-cli.json are intentionally
+# NOT listed here — they are required by `nest build` in the builder stage.
