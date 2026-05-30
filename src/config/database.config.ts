@@ -20,6 +20,9 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false,
     logging: false,
+    ssl: configService.get<string>('DB_SSL') === 'true'
+      ? { rejectUnauthorized: false }
+      : false,
   }),
   inject: [ConfigService],
 };
@@ -34,4 +37,5 @@ export const AppDataSource = new DataSource({
   entities: [__dirname + '/../entities/*.entity.{ts,js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
