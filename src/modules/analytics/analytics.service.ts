@@ -118,7 +118,9 @@ export class AnalyticsService {
   // comparisonType=model     → group by provider + model
 
   async getComparison(userId: number, filter: ComparisonFilterDto) {
-    this.logger.log(`getComparison — user ${userId}, type ${filter.comparisonType ?? ComparisonType.PROVIDER}`);
+    this.logger.log(
+      `getComparison — user ${userId}, type ${filter.comparisonType ?? ComparisonType.PROVIDER}`,
+    );
     const type = filter.comparisonType ?? ComparisonType.PROVIDER;
     const qb = this.applyFilters(this.baseQuery(userId), filter);
 

@@ -96,8 +96,10 @@ export class AuthService {
       .addSelect('user.passwordHash')
       .where('user.id = :id', { id: userId })
       .getOne();
-    if(!user) {
-      this.logger.warn(`Password reset failed — user not found with ID: ${userId}`);
+    if (!user) {
+      this.logger.warn(
+        `Password reset failed — user not found with ID: ${userId}`,
+      );
       throw new UnauthorizedException('User not found');
     }
 
@@ -105,13 +107,18 @@ export class AuthService {
       resetPasswordDto.currentPassword,
       user.passwordHash,
     );
-    
+
     if (!isCurrentPasswordValid) {
-      this.logger.warn(`Password reset failed — incorrect current password for user ID: ${userId}`);
+      this.logger.warn(
+        `Password reset failed — incorrect current password for user ID: ${userId}`,
+      );
       throw new UnauthorizedException('Invalid current password');
     }
 
-    const newHashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+    const newHashedPassword = await bcrypt.hash(
+      resetPasswordDto.newPassword,
+      10,
+    );
     user.passwordHash = newHashedPassword;
     user.updatedOn = new Date();
     await this.userRepository.save(user);

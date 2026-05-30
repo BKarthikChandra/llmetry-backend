@@ -152,9 +152,7 @@ export class ChatService {
       `Provider '${providerName}' responded status='${status}' latency=${latencyMs}ms tokens=${totalTokens} for chat ${chat.id}`,
     );
     if (status === 'error') {
-      this.logger.warn(
-        `Provider error for chat ${chat.id}: ${errorMessage}`,
-      );
+      this.logger.warn(`Provider error for chat ${chat.id}: ${errorMessage}`);
     }
 
     // 6. Save the AI turn only when the provider returned a response.
@@ -270,7 +268,10 @@ export class ChatService {
     }
   }
 
-  async deleteChat(userId: number, chatId: number): Promise<{ message: string }> {
+  async deleteChat(
+    userId: number,
+    chatId: number,
+  ): Promise<{ message: string }> {
     this.logger.log(`deleteChat — user ${userId}, chatId ${chatId}`);
     const chat = await this.chatRepository.findOne({ where: { id: chatId } });
     if (!chat) throw new NotFoundException('Chat not found');
