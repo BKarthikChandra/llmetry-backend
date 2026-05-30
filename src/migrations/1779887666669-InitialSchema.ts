@@ -11,6 +11,9 @@ export class InitialSchema1779887666669 implements MigrationInterface {
       `CREATE TABLE "inference_log" ("id" SERIAL NOT NULL, "chat_id" integer NOT NULL, "message_id" integer NOT NULL, "provider" character varying(100) NOT NULL, "model" character varying(150) NOT NULL, "input_tokens" integer NOT NULL DEFAULT '0', "output_tokens" integer NOT NULL DEFAULT '0', "total_tokens" integer NOT NULL DEFAULT '0', "latency_ms" integer, "status" character varying(20) NOT NULL, "error_message" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_62fb7f199f14d68a04808a8d0f8" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
+      `CREATE TYPE "public"."chat_message_sender_enum" AS ENUM ('user', 'ai')`,
+    );
+    await queryRunner.query(
       `CREATE TABLE "chat_message" ("id" SERIAL NOT NULL, "chat_id" integer NOT NULL, "sender" "public"."chat_message_sender_enum" NOT NULL, "content" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "provider_model_id" integer, CONSTRAINT "PK_3cc0d85193aade457d3077dd06b" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
@@ -81,6 +84,7 @@ export class InitialSchema1779887666669 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "user_provider"`);
     await queryRunner.query(`DROP TABLE "provider_model"`);
     await queryRunner.query(`DROP TABLE "chat_message"`);
+    await queryRunner.query(`DROP TYPE "public"."chat_message_sender_enum"`);
     await queryRunner.query(`DROP TABLE "inference_log"`);
     await queryRunner.query(`DROP TABLE "provider"`);
   }
