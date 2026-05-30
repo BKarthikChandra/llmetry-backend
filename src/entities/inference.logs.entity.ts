@@ -22,12 +22,15 @@ export class InferenceLog {
   @JoinColumn({ name: 'chat_id' })
   chat!: Chat;
 
-  @Column({ name: 'message_id' })
-  messageId!: number;
+  @Column({ name: 'message_id', nullable: true })
+  messageId!: number | null;
 
-  @ManyToOne(() => ChatMessage, (message) => message.inferenceLogs)
+  @ManyToOne(() => ChatMessage, (message) => message.inferenceLogs, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'message_id' })
-  message!: ChatMessage;
+  message!: ChatMessage | null;
 
   @Column({ name: 'provider_id', nullable: true })
   providerId!: number | null;

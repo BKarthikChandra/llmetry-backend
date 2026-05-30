@@ -1,4 +1,10 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -57,10 +63,21 @@ export class AuthService {
       email: createUserDto.email,
       passwordHash: hashedPassword,
     });
-    const saved = await this.userRepository.save(user);
 
-    this.logger.log(`User created successfully with id: ${saved.id}`);
-    return saved;
+    try {
+      const saved = await this.userRepository.save(user);
+      this.logger.log(`User created successfully with id: ${saved.id}`);
+      return saved;
+    } catch (err: unknown) {
+      const pg = err as { code?: string };
+      if (pg.code === '23505') {
+        this.logger.warn(
+          `Registration failed — email already in use: ${createUserDto.email}`,
+        );
+        throw new ConflictException('Email already in use');
+      }
+      throw err;
+    }
   }
 
   async resetPassword(
@@ -68,6 +85,12 @@ export class AuthService {
     resetPasswordDto: ResetPasswordDto,
   ): Promise<void> {
     this.logger.log(`Resetting password for user with ID: ${userId}`);
+
+    if (resetPasswordDto.newPassword !== resetPasswordDto.confirmPassword) {
+      throw new BadRequestException(
+        'newPassword and confirmPassword do not match',
+      );
+    }
     const user = await this.userRepository
       .createQueryBuilder('user')
       .addSelect('user.passwordHash')

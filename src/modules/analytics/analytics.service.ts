@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
@@ -13,6 +13,8 @@ import {
 
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
+
   constructor(
     @InjectRepository(InferenceLog)
     private readonly inferenceLogRepo: Repository<InferenceLog>,
@@ -91,6 +93,8 @@ export class AnalyticsService {
   // ── 1. Overview dashboard ────────────────────────────────────────────────────
 
   async getOverview(userId: number, filter: AnalyticsFilterDto) {
+    this.logger.log(`getOverview — user ${userId}`);
+
     const raw = await this.addAggregates(
       this.applyFilters(this.baseQuery(userId), filter),
     )
@@ -114,6 +118,7 @@ export class AnalyticsService {
   // comparisonType=model     → group by provider + model
 
   async getComparison(userId: number, filter: ComparisonFilterDto) {
+    this.logger.log(`getComparison — user ${userId}, type ${filter.comparisonType ?? ComparisonType.PROVIDER}`);
     const type = filter.comparisonType ?? ComparisonType.PROVIDER;
     const qb = this.applyFilters(this.baseQuery(userId), filter);
 
@@ -149,6 +154,7 @@ export class AnalyticsService {
   // ── 3. Latency trend dashboard ───────────────────────────────────────────────
 
   async getLatencyTrend(userId: number, filter: LatencyFilterDto) {
+    this.logger.log(`getLatencyTrend — user ${userId}`);
     const interval = filter.interval ?? LatencyInterval.DAY;
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
@@ -173,6 +179,7 @@ export class AnalyticsService {
   // ── 4. Throughput dashboard ──────────────────────────────────────────────────
 
   async getThroughput(userId: number, filter: LatencyFilterDto) {
+    this.logger.log(`getThroughput — user ${userId}`);
     const interval = filter.interval ?? LatencyInterval.DAY;
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
@@ -206,6 +213,7 @@ export class AnalyticsService {
   // ── 5. Error dashboard ───────────────────────────────────────────────────────
 
   async getErrors(userId: number, filter: AnalyticsFilterDto) {
+    this.logger.log(`getErrors — user ${userId}`);
     const errorBase = () =>
       this.applyFilters(this.baseQuery(userId), filter).andWhere(
         "il.status = 'error'",

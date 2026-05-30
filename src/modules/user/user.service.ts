@@ -363,14 +363,6 @@ export class UserService {
           const data = (await res.json()) as { data: { id: string }[] };
           return data.data.map((m) => m.id);
         }
-        case 'copilot':
-          return [
-            'gpt-4o',
-            'gpt-4o-mini',
-            'claude-3.5-sonnet',
-            'o1-preview',
-            'o1-mini',
-          ];
         default:
           throw new BadRequestException(`Unknown provider: ${providerName}`);
       }

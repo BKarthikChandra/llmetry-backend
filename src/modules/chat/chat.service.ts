@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +21,8 @@ const CONTEXT_WINDOW = 20;
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
@@ -39,6 +42,10 @@ export class ChatService {
     message: string,
     chatId?: number,
   ): Promise<{ response: string; chatId: number }> {
+    this.logger.log(
+      `sendMessage — user ${userId}, modelId ${modelId}, chatId ${chatId ?? 'new'}`,
+    );
+
     // 1. Resolve model + provider (apiKey is select:false — must addSelect explicitly)
     const providerModel = await this.providerModelRepository
       .createQueryBuilder('providerModel')
@@ -56,9 +63,9 @@ export class ChatService {
     let chat: Chat;
     let priorMessages: ChatMessage[] = [];
 
-    if (chatId) {
+    if (chatId !== undefined) {
       const existing = await this.chatRepository.findOne({
-        where: { id: chatId },
+        where: { id: chatId, isDeleted: false },
       });
       if (!existing) throw new NotFoundException('Chat not found');
       if (existing.userId !== userId)
@@ -85,6 +92,14 @@ export class ChatService {
     // 4. Build context for the provider:
     //    [summary block if exists] + [last 20 prior messages] + [current user message]
     const windowMessages = priorMessages.slice(-CONTEXT_WINDOW);
+    // Drop trailing user turns — they're dangling from prior errored requests where
+    // no AI message was saved. Gemini and Claude reject consecutive user turns.
+    while (
+      windowMessages.length > 0 &&
+      windowMessages[windowMessages.length - 1].sender === 'user'
+    ) {
+      windowMessages.pop();
+    }
     const messages: LlmMessage[] = [];
 
     if (chat.summarySoFar) {
@@ -111,6 +126,9 @@ export class ChatService {
 
     // 5. Call the provider
     const providerName = providerModel.userProvider.provider.name;
+    this.logger.log(
+      `Calling provider '${providerName}' model '${providerModel.model}' for chat ${chat.id}`,
+    );
     const apiKey = decrypt(
       providerModel.userProvider.apiKey,
       process.env.ENCRYPTION_KEY!,
@@ -130,20 +148,36 @@ export class ChatService {
       apiKey,
     );
 
-    // 6. Save the AI turn
-    const aiMessage = this.chatMessageRepository.create({
-      chatId: chat.id,
-      sender: 'ai',
-      content: responseText || null,
-      providerModelId: modelId,
-    });
-    await this.chatMessageRepository.save(aiMessage);
+    this.logger.log(
+      `Provider '${providerName}' responded status='${status}' latency=${latencyMs}ms tokens=${totalTokens} for chat ${chat.id}`,
+    );
+    if (status === 'error') {
+      this.logger.warn(
+        `Provider error for chat ${chat.id}: ${errorMessage}`,
+      );
+    }
 
-    // 7. Save inference log
+    // 6. Save the AI turn only when the provider returned a response.
+    //    On error there is no content to persist, and skipping the save prevents
+    //    a null-content ghost message from appearing in the chat history.
+    let aiMessageId: number | null = null;
+    if (status === 'success') {
+      const aiMessage = this.chatMessageRepository.create({
+        chatId: chat.id,
+        sender: 'ai',
+        content: responseText || null,
+        providerModelId: modelId,
+      });
+      await this.chatMessageRepository.save(aiMessage);
+      aiMessageId = aiMessage.id;
+    }
+
+    // 7. Save inference log — always written regardless of success/error so
+    //    the analytics dashboards capture failed calls too.
     await this.inferenceLogRepository.save(
       this.inferenceLogRepository.create({
         chatId: chat.id,
-        messageId: aiMessage.id,
+        messageId: aiMessageId,
         providerId: providerModel.userProvider.providerId,
         providerModelId: modelId,
         provider: providerName,
@@ -181,10 +215,12 @@ export class ChatService {
   }
 
   async getMessages(userId: number, chatId: number): Promise<ChatMessage[]> {
-    const chat = await this.chatRepository.findOne({ where: { id: chatId } });
+    this.logger.log(`getMessages — user ${userId}, chatId ${chatId}`);
+    const chat = await this.chatRepository.findOne({
+      where: { id: chatId, isDeleted: false },
+    });
     if (!chat) throw new NotFoundException('Chat not found');
     if (chat.userId !== userId) throw new ForbiddenException();
-    if (chat.isDeleted) throw new ForbiddenException();
 
     return this.chatMessageRepository.find({
       where: { chatId },
@@ -227,12 +263,15 @@ export class ChatService {
         chat.summarizedCount = newOverflowCount;
         await this.chatRepository.save(chat);
       }
-    } catch {
-      // Summarization failure is non-fatal — the chat continues without the updated summary
+    } catch (err) {
+      this.logger.warn(
+        `Rolling summarization failed for chat ${chat.id}: ${(err as Error).message}`,
+      );
     }
   }
 
-  async deleteChat(userId: number, chatId: number): Promise<void> {
+  async deleteChat(userId: number, chatId: number): Promise<{ message: string }> {
+    this.logger.log(`deleteChat — user ${userId}, chatId ${chatId}`);
     const chat = await this.chatRepository.findOne({ where: { id: chatId } });
     if (!chat) throw new NotFoundException('Chat not found');
     if (chat.userId !== userId) throw new ForbiddenException();
@@ -240,5 +279,6 @@ export class ChatService {
     // Soft delete: mark the chat as deleted without removing records from the database
     chat.isDeleted = true;
     await this.chatRepository.save(chat);
+    return { message: 'Chat deleted successfully' };
   }
 }

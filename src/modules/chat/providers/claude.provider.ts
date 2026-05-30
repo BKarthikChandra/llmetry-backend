@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import {
   ILlmProvider,
   LlmChatResult,
@@ -6,26 +7,60 @@ import {
 
 export class ClaudeProvider implements ILlmProvider {
   async chat(
-    _messages: LlmMessage[],
-    _model: string,
-    _apiKey: string,
+    messages: LlmMessage[],
+    model: string,
+    apiKey: string,
   ): Promise<LlmChatResult> {
-    return {
-      text: '',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 0,
-      status: 'error',
-      errorMessage: "Provider 'claude' is not yet supported",
-    };
+    const start = Date.now();
+    try {
+      const client = new Anthropic({ apiKey });
+      const response = await client.messages.create({
+        model,
+        max_tokens: 4096,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+      });
+
+      const textBlock = response.content.find((b) => b.type === 'text');
+      const inputTokens = response.usage.input_tokens;
+      const outputTokens = response.usage.output_tokens;
+
+      return {
+        text: textBlock?.text ?? '',
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        latencyMs: Date.now() - start,
+        status: 'success',
+        errorMessage: null,
+      };
+    } catch (err) {
+      return {
+        text: '',
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        latencyMs: Date.now() - start,
+        status: 'error',
+        errorMessage: (err as Error).message,
+      };
+    }
   }
 
   async summarize(
-    _prompt: string,
-    _model: string,
-    _apiKey: string,
+    prompt: string,
+    model: string,
+    apiKey: string,
   ): Promise<string> {
-    throw new Error("Provider 'claude' is not yet supported");
+    const client = new Anthropic({ apiKey });
+    const response = await client.messages.create({
+      model,
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const textBlock = response.content.find((b) => b.type === 'text');
+    return textBlock?.text.trim() ?? '';
   }
 }

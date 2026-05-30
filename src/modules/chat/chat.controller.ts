@@ -11,7 +11,6 @@ import {
 
 import {
   ApiBearerAuth,
-  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -22,6 +21,7 @@ import { ChatMessage } from '../../entities/chat.message.entity';
 
 import { ChatService } from './chat.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { SendMessageDto } from './dto/send-message.dto';
 
 @ApiTags('Chat')
 @ApiBearerAuth()
@@ -69,15 +69,6 @@ export class ChatController {
     example: 42,
     description: 'Omit to start a new chat',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Hello!' },
-      },
-      required: ['message'],
-    },
-  })
   @ApiResponse({
     status: 200,
     description: 'Message processed successfully',
@@ -91,10 +82,10 @@ export class ChatController {
   async sendMessage(
     @Param('modelId', ParseIntPipe) modelId: number,
     @CurrentUser('id') userId: number,
-    @Body('message') message: string,
+    @Body() dto: SendMessageDto,
     @Query('chatId', new ParseIntPipe({ optional: true })) chatId?: number,
   ): Promise<{ response: string; chatId: number }> {
-    return this.chatService.sendMessage(userId, modelId, message, chatId);
+    return this.chatService.sendMessage(userId, modelId, dto.message, chatId);
   }
 
   @Delete('/:chatId')
@@ -113,7 +104,7 @@ export class ChatController {
   async deleteChat(
     @Param('chatId', ParseIntPipe) chatId: number,
     @CurrentUser('id') userId: number,
-  ): Promise<void> {
-    await this.chatService.deleteChat(userId, chatId);
+  ): Promise<{ message: string }> {
+    return this.chatService.deleteChat(userId, chatId);
   }
 }

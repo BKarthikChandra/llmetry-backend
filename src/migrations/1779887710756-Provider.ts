@@ -6,7 +6,6 @@ export class Provider1779887710756 implements MigrationInterface {
             INSERT INTO "provider" ("name", "display_name") VALUES
             ('claude', 'Claude'),
             ('openai', 'OpenAI'),
-            ('copilot', 'GitHub Copilot'),
             ('gemini', 'Gemini'),
             ('deepseek', 'DeepSeek')
         `);
@@ -14,7 +13,7 @@ export class Provider1779887710756 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `DELETE FROM "provider" WHERE "name" IN ('claude', 'openai', 'copilot', 'gemini', 'deepseek')`,
+      `DELETE FROM "provider" WHERE "name" IN ('claude', 'openai', 'gemini', 'deepseek')`,
     );
   }
 }
