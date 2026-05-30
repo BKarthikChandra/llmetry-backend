@@ -10,6 +10,8 @@ Note: The backend is hosted on Render's free tier and may take around 30 seconds
 
 API documentation via Swagger is available at /api when the server is running.
 
+Architecture: https://github.com/BKarthikChandra/llmetry-backend/blob/main/architecture/architecture.md
+
 
 How It Works
 

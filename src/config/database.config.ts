@@ -20,9 +20,10 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false,
     logging: false,
-    ssl: configService.get<string>('DB_SSL') === 'true'
-      ? { rejectUnauthorized: false }
-      : false,
+    ssl:
+      configService.get<string>('DB_SSL') === 'true'
+        ? { rejectUnauthorized: false }
+        : false,
   }),
   inject: [ConfigService],
 };
