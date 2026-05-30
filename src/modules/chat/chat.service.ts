@@ -184,6 +184,7 @@ export class ChatService {
     const chat = await this.chatRepository.findOne({ where: { id: chatId } });
     if (!chat) throw new NotFoundException('Chat not found');
     if (chat.userId !== userId) throw new ForbiddenException();
+    if (chat.isDeleted) throw new ForbiddenException();
 
     return this.chatMessageRepository.find({
       where: { chatId },
@@ -229,5 +230,15 @@ export class ChatService {
     } catch {
       // Summarization failure is non-fatal — the chat continues without the updated summary
     }
+  }
+
+  async deleteChat(userId: number, chatId: number): Promise<void> {
+    const chat = await this.chatRepository.findOne({ where: { id: chatId } });
+    if (!chat) throw new NotFoundException('Chat not found');
+    if (chat.userId !== userId) throw new ForbiddenException();
+
+    // Soft delete: mark the chat as deleted without removing records from the database
+    chat.isDeleted = true;
+    await this.chatRepository.save(chat);
   }
 }

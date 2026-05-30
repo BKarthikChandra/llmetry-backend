@@ -34,6 +34,9 @@ export class Chat {
 
   @Column({ name: 'summarized_count', type: 'int', default: 0 })
   summarizedCount!: number;
+  
+  @Column({ name : 'is_deleted', type: 'boolean', default: false })
+  isDeleted!: boolean;
 
   @OneToMany(() => ChatMessage, (message) => message.chat)
   messages!: ChatMessage[];

@@ -56,6 +56,9 @@ export class ChatSummaryDto {
 
   @ApiProperty()
   createdAt!: Date;
+   
+  @ApiProperty()
+  lastActivityAt!: Date | null;
 
   @ApiProperty({ nullable: true })
   title!: string | null;

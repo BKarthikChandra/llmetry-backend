@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -94,5 +95,18 @@ export class ChatController {
     @Query('chatId', new ParseIntPipe({ optional: true })) chatId?: number,
   ): Promise<{ response: string; chatId: number }> {
     return this.chatService.sendMessage(userId, modelId, message, chatId);
+  }
+
+  @Delete('/:chatId')
+  @ApiOperation({ summary: 'Delete a chat' })
+  @ApiParam({ name: 'chatId', type: Number, description: 'ID of the chat to delete' })
+  @ApiResponse({ status: 200, description: 'Chat deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Chat does not belong to the authenticated user' })
+  @ApiResponse({ status: 404, description: 'Chat not found' })
+  async deleteChat(
+    @Param('chatId', ParseIntPipe) chatId: number,
+    @CurrentUser('id') userId: number,
+  ): Promise<void> {
+    await this.chatService.deleteChat(userId, chatId);
   }
 }
