@@ -29,11 +29,11 @@ export class ChatMessage {
   content!: string | null;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 
   @Column({ name: 'provider_model_id', nullable: true })
   providerModelId!: number | null;

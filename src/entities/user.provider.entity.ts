@@ -35,11 +35,11 @@ export class UserProvider {
   apiKey!: string;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 
   @OneToMany(() => ProviderModel, (providerModel) => providerModel.userProvider)
   providerModels!: ProviderModel[];

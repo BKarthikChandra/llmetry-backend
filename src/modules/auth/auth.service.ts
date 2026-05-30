@@ -3,16 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { CreateUserDto, LoginDto } from './dto/login.dto';
+import { CreateUserDto, LoginDto, ResetPasswordDto } from './dto/login.dto';
 import { User } from '../../entities/users.entity';
-import { GoogleGenAI } from '@google/genai';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-  });
 
   constructor(
     @InjectRepository(User)
@@ -67,24 +63,35 @@ export class AuthService {
     return saved;
   }
 
-  async generateAIResponse(prompt: string): Promise<any> {
-    this.logger.log(
-      `Generating AI response for prompt length: ${prompt?.length ?? 0}`,
-    );
-
-    try {
-      const result = await this.ai.models.generateContent({
-        model: 'models/gemini-2.5-flash',
-        contents: prompt,
-      });
-      this.logger.log('AI response generated successfully');
-      return result;
-    } catch (err) {
-      this.logger.error(
-        'Failed to generate AI response',
-        err instanceof Error ? err.stack : String(err),
-      );
-      throw err;
+  async resetPassword(
+    userId: number,
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<void> {
+    this.logger.log(`Resetting password for user with ID: ${userId}`);
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+    if(!user) {
+      this.logger.warn(`Password reset failed — user not found with ID: ${userId}`);
+      throw new UnauthorizedException('User not found');
     }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      resetPasswordDto.currentPassword,
+      user.passwordHash,
+    );
+    
+    if (!isCurrentPasswordValid) {
+      this.logger.warn(`Password reset failed — incorrect current password for user ID: ${userId}`);
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const newHashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+    user.passwordHash = newHashedPassword;
+    user.updatedOn = new Date();
+    await this.userRepository.save(user);
+    this.logger.log(`Password reset successful for user ID: ${userId}`);
   }
 }

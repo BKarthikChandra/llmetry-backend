@@ -23,19 +23,19 @@ export class Chat {
   user!: User;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 
   @Column({ name: 'summary_so_far', type: 'text', nullable: true })
   summarySoFar!: string | null;
 
   @Column({ name: 'summarized_count', type: 'int', default: 0 })
   summarizedCount!: number;
-  
-  @Column({ name : 'is_deleted', type: 'boolean', default: false })
+
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
   isDeleted!: boolean;
 
   @OneToMany(() => ChatMessage, (message) => message.chat)

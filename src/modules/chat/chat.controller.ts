@@ -34,7 +34,7 @@ export class ChatController {
   @ApiParam({ name: 'chatId', type: Number, description: 'ID of the chat' })
   @ApiResponse({
     status: 200,
-    description: 'Messages ordered by createdAt ASC',
+    description: 'Messages ordered by createdOn ASC',
   })
   @ApiResponse({
     status: 403,
@@ -99,9 +99,16 @@ export class ChatController {
 
   @Delete('/:chatId')
   @ApiOperation({ summary: 'Delete a chat' })
-  @ApiParam({ name: 'chatId', type: Number, description: 'ID of the chat to delete' })
+  @ApiParam({
+    name: 'chatId',
+    type: Number,
+    description: 'ID of the chat to delete',
+  })
   @ApiResponse({ status: 200, description: 'Chat deleted successfully' })
-  @ApiResponse({ status: 403, description: 'Chat does not belong to the authenticated user' })
+  @ApiResponse({
+    status: 403,
+    description: 'Chat does not belong to the authenticated user',
+  })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   async deleteChat(
     @Param('chatId', ParseIntPipe) chatId: number,

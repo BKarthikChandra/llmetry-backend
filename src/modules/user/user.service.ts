@@ -57,47 +57,47 @@ export class UserService {
   }
 
   async getUserChats(userId: number): Promise<ChatSummaryDto[]> {
-  const rows = await this.chatRepository
-    .createQueryBuilder('chat')
-    .select('chat.id', 'chatId')
-    .addSelect('chat.createdAt', 'createdAt')
-    .addSelect(
-      (qb) =>
-        qb
-          .select('msg.content')
-          .from(ChatMessage, 'msg')
-          .where('msg.chatId = chat.id')
-          .andWhere("msg.sender = 'user'")
-          .orderBy('msg.createdAt', 'ASC')
-          .limit(1),
-      'title',
-    )
-    .addSelect(
-      (qb) =>
-        qb
-          .select('MAX(msg.createdAt)')
-          .from(ChatMessage, 'msg')
-          .where('msg.chatId = chat.id'),
-      'lastActivityAt',
-    )
-    .where('chat.userId = :userId', { userId })
-    .andWhere('chat.isDeleted = :isDeleted', { isDeleted: false })
-    .orderBy('lastActivityAt', 'DESC')
-    .addOrderBy('chat.createdAt', 'DESC')
-    .getRawMany<{
-      chatId: number;
-      createdAt: Date;
-      title: string | null;
-      lastActivityAt: Date | null;
-    }>();
+    const rows = await this.chatRepository
+      .createQueryBuilder('chat')
+      .select('chat.id', 'chatId')
+      .addSelect('chat.createdOn', 'createdOn')
+      .addSelect(
+        (qb) =>
+          qb
+            .select('msg.content')
+            .from(ChatMessage, 'msg')
+            .where('msg.chatId = chat.id')
+            .andWhere("msg.sender = 'user'")
+            .orderBy('msg.createdOn', 'ASC')
+            .limit(1),
+        'title',
+      )
+      .addSelect(
+        (qb) =>
+          qb
+            .select('MAX(msg.createdOn)')
+            .from(ChatMessage, 'msg')
+            .where('msg.chatId = chat.id'),
+        'lastActivityAt',
+      )
+      .where('chat.userId = :userId', { userId })
+      .andWhere('chat.isDeleted = :isDeleted', { isDeleted: false })
+      .orderBy('lastActivityAt', 'DESC')
+      .addOrderBy('chat.createdOn', 'DESC')
+      .getRawMany<{
+        chatId: number;
+        createdOn: Date;
+        title: string | null;
+        lastActivityAt: Date | null;
+      }>();
 
-  return rows.map((row) => ({
-    chatId: row.chatId,
-    createdAt: row.createdAt,
-    title: row.title ?? null,
-    lastActivityAt: row.lastActivityAt,
-  }));
-}
+    return rows.map((row) => ({
+      chatId: row.chatId,
+      createdOn: row.createdOn,
+      title: row.title ?? null,
+      lastActivityAt: row.lastActivityAt,
+    }));
+  }
 
   async registerProvider(
     userId: number,
@@ -173,7 +173,7 @@ export class UserService {
       id: up.providerId,
       name: up.provider.name,
       displayName: up.provider.displayName,
-      registeredAt: up.createdAt,
+      registeredAt: up.createdOn,
     }));
   }
 
@@ -208,7 +208,7 @@ export class UserService {
     return models.map((m) => ({
       id: m.id,
       model: m.model,
-      createdAt: m.createdAt,
+      createdOn: m.createdOn,
     }));
   }
 

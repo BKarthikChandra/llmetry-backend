@@ -298,7 +298,7 @@ export class AnalyticsController {
             provider: 'gemini',
             model: 'gemini-2.0-flash',
             errorMessage: 'API quota exceeded',
-            createdAt: '2025-05-27T14:32:00.000Z',
+            createdOn: '2025-05-27T14:32:00.000Z',
           },
         ],
       },

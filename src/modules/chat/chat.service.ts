@@ -66,7 +66,7 @@ export class ChatService {
       chat = existing;
       priorMessages = await this.chatMessageRepository.find({
         where: { chatId },
-        order: { createdAt: 'ASC' },
+        order: { createdOn: 'ASC' },
       });
     } else {
       chat = this.chatRepository.create({ userId });
@@ -188,7 +188,7 @@ export class ChatService {
 
     return this.chatMessageRepository.find({
       where: { chatId },
-      order: { createdAt: 'ASC' },
+      order: { createdOn: 'ASC' },
     });
   }
 

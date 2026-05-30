@@ -13,11 +13,11 @@ export class Provider {
   displayName!: string;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 
   @OneToMany(() => UserProvider, (userProvider) => userProvider.provider)
   userProviders!: UserProvider[];

@@ -49,10 +49,10 @@ export class AnalyticsService {
       });
     }
     if (filter.from) {
-      qb.andWhere('il.createdAt >= :from', { from: new Date(filter.from) });
+      qb.andWhere('il.createdOn >= :from', { from: new Date(filter.from) });
     }
     if (filter.to) {
-      qb.andWhere('il.createdAt <= :to', { to: new Date(filter.to) });
+      qb.andWhere('il.createdOn <= :to', { to: new Date(filter.to) });
     }
     return qb;
   }
@@ -152,11 +152,11 @@ export class AnalyticsService {
     const interval = filter.interval ?? LatencyInterval.DAY;
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select(`DATE_TRUNC('${interval}', il.created_at)`, 'bucket')
+      .select(`DATE_TRUNC('${interval}', il.created_on)`, 'bucket')
       .addSelect('AVG(il.latency_ms)', 'averageLatencyMs')
       .addSelect('COUNT(*)', 'totalRequests')
-      .groupBy(`DATE_TRUNC('${interval}', il.created_at)`)
-      .orderBy(`DATE_TRUNC('${interval}', il.created_at)`, 'ASC')
+      .groupBy(`DATE_TRUNC('${interval}', il.created_on)`)
+      .orderBy(`DATE_TRUNC('${interval}', il.created_on)`, 'ASC')
       .getRawMany<{
         bucket: string;
         averageLatencyMs: string;
@@ -176,7 +176,7 @@ export class AnalyticsService {
     const interval = filter.interval ?? LatencyInterval.DAY;
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select(`DATE_TRUNC('${interval}', il.created_at)`, 'bucket')
+      .select(`DATE_TRUNC('${interval}', il.created_on)`, 'bucket')
       .addSelect('COUNT(*)', 'totalRequests')
       .addSelect(
         "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
@@ -186,8 +186,8 @@ export class AnalyticsService {
         "SUM(CASE WHEN il.status = 'error' THEN 1 ELSE 0 END)",
         'failedRequests',
       )
-      .groupBy(`DATE_TRUNC('${interval}', il.created_at)`)
-      .orderBy(`DATE_TRUNC('${interval}', il.created_at)`, 'ASC')
+      .groupBy(`DATE_TRUNC('${interval}', il.created_on)`)
+      .orderBy(`DATE_TRUNC('${interval}', il.created_on)`, 'ASC')
       .getRawMany<{
         bucket: string;
         totalRequests: string;
@@ -225,14 +225,14 @@ export class AnalyticsService {
         .select('il.provider', 'provider')
         .addSelect('il.model', 'model')
         .addSelect('il.errorMessage', 'errorMessage')
-        .addSelect('il.createdAt', 'createdAt')
-        .orderBy('il.createdAt', 'DESC')
+        .addSelect('il.createdOn', 'createdOn')
+        .orderBy('il.createdOn', 'DESC')
         .limit(20)
         .getRawMany<{
           provider: string;
           model: string;
           errorMessage: string | null;
-          createdAt: Date;
+          createdOn: Date;
         }>(),
     ]);
 
@@ -246,7 +246,7 @@ export class AnalyticsService {
         provider: r.provider,
         model: r.model,
         errorMessage: r.errorMessage,
-        createdAt: r.createdAt,
+        createdOn: r.createdOn,
       })),
     };
   }

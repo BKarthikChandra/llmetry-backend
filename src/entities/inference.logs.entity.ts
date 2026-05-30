@@ -76,9 +76,9 @@ export class InferenceLog {
   errorMessage!: string | null;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 }

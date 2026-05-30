@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -17,7 +18,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, CreateUserDto } from './dto/login.dto';
+import { LoginDto, CreateUserDto, ResetPasswordDto } from './dto/login.dto';
 
 @ApiTags('auth')
 @ApiBearerAuth()
@@ -53,15 +54,15 @@ export class AuthController {
     return user;
   }
 
-  @Public()
-  @Post('ai-response')
-  @ApiOperation({ summary: 'Generate AI response from prompt' })
-  @ApiResponse({ status: 200, description: 'Returns AI-generated response' })
+  @Patch('reset-password')
+  @ApiOperation({ summary: 'Reset password for the authenticated user' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid password data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiBody({
-    schema: { type: 'object', properties: { prompt: { type: 'string' } } },
-  })
-  async generateAIResponse(@Body('prompt') prompt: string) {
-    return this.authService.generateAIResponse(prompt);
+  async resetPassword(
+    @CurrentUser('id') userId: number,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(userId, resetPasswordDto);
   }
 }

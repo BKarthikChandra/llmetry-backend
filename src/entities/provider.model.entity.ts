@@ -23,11 +23,11 @@ export class ProviderModel {
   model!: string;
 
   @Column({
-    name: 'created_at',
+    name: 'created_on',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  createdAt!: Date;
+  createdOn!: Date;
 
   @OneToMany(() => ChatMessage, (message) => message.providerModel)
   chatMessages!: ChatMessage[];

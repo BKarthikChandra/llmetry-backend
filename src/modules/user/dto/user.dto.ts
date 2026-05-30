@@ -47,7 +47,7 @@ export class ProviderModelDto {
   model!: string;
 
   @ApiProperty()
-  createdAt!: Date;
+  createdOn!: Date;
 }
 
 export class ChatSummaryDto {
@@ -55,8 +55,8 @@ export class ChatSummaryDto {
   chatId!: number;
 
   @ApiProperty()
-  createdAt!: Date;
-   
+  createdOn!: Date;
+
   @ApiProperty()
   lastActivityAt!: Date | null;
 
