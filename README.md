@@ -1,98 +1,93 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+LLMetry Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS REST API that acts as a unified gateway for multiple LLM providers. Users bring their own API keys, configure models, and send chat messages through a single interface. All inference calls are logged for analytics regardless of outcome.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Live demo: https://llmetry-frontend-1.onrender.com/login
 
-## Description
+Demo credentials: demo@llmetry.com and demo@123
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Note: The backend is hosted on Render's free tier and may take around 30 seconds on the first request due to cold start.
 
-## Project setup
+API documentation via Swagger is available at /api when the server is running.
 
-```bash
-$ npm install
-```
 
-## Compile and run the project
+How It Works
 
-```bash
-# development
-$ npm run start
+Users register an API key for any supported LLM provider. The backend validates the key by calling the provider's model-listing API, encrypts it with AES-256-GCM, and stores it. Users then add specific models from that provider and start chatting.
 
-# watch mode
-$ npm run start:dev
+Each chat request resolves the model, decrypts the user's API key, builds a context window from the conversation history, and forwards the messages to the provider. Token counts and latency are recorded in an immutable inference log after every call, successful or failed, which powers the analytics dashboards.
 
-# production mode
-$ npm run start:prod
-```
+Long conversations are handled through rolling summarization. Once the message count exceeds the 20-message sliding window, the oldest messages are summarized by the same LLM and stored alongside the chat. The summary is injected as context on future requests so conversation continuity is preserved without unbounded token growth.
 
-## Run tests
 
-```bash
-# unit tests
-$ npm run test
+Tech Stack
 
-# e2e tests
-$ npm run test:e2e
+NestJS, TypeScript, PostgreSQL, TypeORM, Passport JWT, bcrypt, AES-256-GCM
 
-# test coverage
-$ npm run test:cov
-```
 
-## Deployment
+Supported Providers
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+OpenAI, Anthropic Claude, Google Gemini, DeepSeek
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Features
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Authentication with JWT-based login, registration, and password reset.
 
-## Resources
+Provider Management to register API keys per provider with live validation against the provider's API.
 
-Check out a few resources that may come in handy when working with NestJS:
+Model Management to configure specific models per provider, validated against the provider's model catalog.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Chat with multi-session support, conversation history, and rolling summarization for long chats.
 
-## Support
+Analytics with per-user inference logs covering token usage, latency, error rates, throughput, and provider comparisons.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
+Frontend
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Repository: https://github.com/BKarthikChandra/llmetry-frontend
 
-## License
+The frontend is a React and Vite and TypeScript dashboard covering provider and model management, a multi-session chat interface with markdown rendering, and analytics dashboards with date-range and provider filters.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Tech stack: React 19, Vite, TypeScript, React Router v7, Axios, Recharts, CSS Modules.
+
+To run the frontend locally, clone the frontend repository, install dependencies with npm install, set VITE_API_BASE_URL to your backend URL, and start the dev server with npm run dev. The app runs on http://localhost:5173.
+
+
+Running Locally
+
+Prerequisites: Node.js 18 or higher and a running PostgreSQL instance.
+
+Install dependencies with npm install.
+
+Copy .env.example to .env and fill in the required values shown in the Environment Variables section below.
+
+Run database migrations with npm run migration:run.
+
+Start the development server with npm run start:dev.
+
+The API will be available at http://localhost:5000 and Swagger UI at http://localhost:5000/api.
+
+
+Running With Docker
+
+Prerequisites: Docker and Docker Compose.
+
+The docker-compose.yml starts both PostgreSQL and the backend together.
+
+Run docker-compose up to start everything. Migrations run automatically on startup.
+
+The API will be available at http://localhost:5000.
+
+
+Environment Variables
+
+DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME, and DB_SSL are required for the database connection.
+
+JWT_SECRET should be a 64-character hex string for signing tokens.
+
+ENCRYPTION_KEY should be a 64-character hex string for encrypting stored API keys.
+
+FRONTEND_URL should be set to your frontend URL for CORS. Defaults to http://localhost:5173.
+
+PORT defaults to 5000.
