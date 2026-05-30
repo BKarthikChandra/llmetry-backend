@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -101,6 +102,10 @@ export class AuthService {
         `Password reset failed — user not found with ID: ${userId}`,
       );
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.email === 'demo@llmetry.com') {
+      throw new ForbiddenException('Forbidden: this is a public demo account');
     }
 
     const isCurrentPasswordValid = await bcrypt.compare(
