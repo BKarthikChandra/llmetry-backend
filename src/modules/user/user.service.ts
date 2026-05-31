@@ -60,7 +60,10 @@ export class UserService {
     const rows = await this.chatRepository
       .createQueryBuilder('chat')
       .select('chat.id', 'chatId')
-      .addSelect('chat.createdOn', 'createdOn')
+      .addSelect(
+        `to_char(chat.created_on, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+        'createdOn',
+      )
       .addSelect(
         (qb) =>
           qb
@@ -75,7 +78,9 @@ export class UserService {
       .addSelect(
         (qb) =>
           qb
-            .select('MAX(msg.createdOn)')
+            .select(
+              `to_char(MAX(msg.created_on), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+            )
             .from(ChatMessage, 'msg')
             .where('msg.chatId = chat.id'),
         'lastActivityAt',
@@ -86,9 +91,9 @@ export class UserService {
       .addOrderBy('chat.createdOn', 'DESC')
       .getRawMany<{
         chatId: number;
-        createdOn: Date;
+        createdOn: string;
         title: string | null;
-        lastActivityAt: Date | null;
+        lastActivityAt: string | null;
       }>();
 
     return rows.map((row) => ({

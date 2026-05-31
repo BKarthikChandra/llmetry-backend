@@ -14,6 +14,7 @@ import { Chat } from '../../entities/chat.entity';
 import { ChatMessage } from '../../entities/chat.message.entity';
 import { InferenceLog } from '../../entities/inference.logs.entity';
 import { decrypt } from '../../common/utils/encryption.util';
+import { ChatMessageDto } from './dto/chat-message.dto';
 import { LlmMessage } from './providers/llm-provider.interface';
 import { getProvider } from './providers/provider.factory';
 
@@ -387,7 +388,7 @@ export class ChatService {
     return { chatId: chat.id, inputTokens, outputTokens, totalTokens, latencyMs };
   }
 
-  async getMessages(userId: number, chatId: number): Promise<ChatMessage[]> {
+  async getMessages(userId: number, chatId: number): Promise<ChatMessageDto[]> {
     this.logger.log(`getMessages — user ${userId}, chatId ${chatId}`);
     const chat = await this.chatRepository.findOne({
       where: { id: chatId, isDeleted: false },
@@ -395,10 +396,20 @@ export class ChatService {
     if (!chat) throw new NotFoundException('Chat not found');
     if (chat.userId !== userId) throw new ForbiddenException();
 
-    return this.chatMessageRepository.find({
-      where: { chatId },
-      order: { createdOn: 'ASC' },
-    });
+    return this.chatMessageRepository
+      .createQueryBuilder('message')
+      .select('message.id', 'id')
+      .addSelect('message.chatId', 'chatId')
+      .addSelect('message.sender', 'sender')
+      .addSelect('message.content', 'content')
+      .addSelect(
+        `to_char(message.created_on, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+        'createdOn',
+      )
+      .addSelect('message.providerModelId', 'providerModelId')
+      .where('message.chatId = :chatId', { chatId })
+      .orderBy('message.createdOn', 'ASC')
+      .getRawMany<ChatMessageDto>();
   }
 
   // Summarizes messages that just fell off the sliding window and updates the chat record.

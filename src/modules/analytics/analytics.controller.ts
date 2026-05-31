@@ -40,6 +40,14 @@ export class AnalyticsController {
     example: 1,
   })
   @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    example: 'Asia/Kolkata',
+    description:
+      'IANA timezone used for date filtering and time-based aggregation (default: UTC)',
+  })
+  @ApiQuery({
     name: 'from',
     required: false,
     type: String,
@@ -98,6 +106,14 @@ export class AnalyticsController {
     example: 1,
   })
   @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    example: 'Asia/Kolkata',
+    description:
+      'IANA timezone used for date filtering and time-based aggregation (default: UTC)',
+  })
+  @ApiQuery({
     name: 'from',
     required: false,
     type: String,
@@ -149,6 +165,14 @@ export class AnalyticsController {
     required: false,
     type: Number,
     example: 1,
+  })
+  @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    example: 'Asia/Kolkata',
+    description:
+      'IANA timezone used for date filtering and time-based aggregation (default: UTC)',
   })
   @ApiQuery({
     name: 'from',
@@ -212,6 +236,14 @@ export class AnalyticsController {
     example: 1,
   })
   @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    example: 'Asia/Kolkata',
+    description:
+      'IANA timezone used for date filtering and time-based aggregation (default: UTC)',
+  })
+  @ApiQuery({
     name: 'from',
     required: false,
     type: String,
@@ -273,6 +305,14 @@ export class AnalyticsController {
     required: false,
     type: Number,
     example: 1,
+  })
+  @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    example: 'Asia/Kolkata',
+    description:
+      'IANA timezone used for date filtering and time-based aggregation (default: UTC)',
   })
   @ApiQuery({
     name: 'from',

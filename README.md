@@ -42,7 +42,7 @@ Model Management to configure specific models per provider, validated against th
 
 Chat with multi-session support, conversation history, rolling summarization for long chats, and SSE streaming for real-time token-by-token responses.
 
-Analytics with per-user inference logs covering token usage, latency, error rates, throughput, and provider comparisons.
+Analytics with per-user inference logs covering token usage, latency, error rates, throughput, and provider comparisons. Analytics date filters and hourly or daily buckets accept an IANA timezone such as Asia/Kolkata, while stored inference timestamps remain UTC.
 
 
 Frontend

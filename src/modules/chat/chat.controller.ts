@@ -19,10 +19,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ChatMessage } from '../../entities/chat.message.entity';
 
 import { ChatService } from './chat.service';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ChatMessageDto } from './dto/chat-message.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 
 @ApiTags('Chat')
@@ -37,6 +37,7 @@ export class ChatController {
   @ApiResponse({
     status: 200,
     description: 'Messages ordered by createdOn ASC',
+    type: [ChatMessageDto],
   })
   @ApiResponse({
     status: 403,
@@ -46,7 +47,7 @@ export class ChatController {
   getMessages(
     @Param('chatId', ParseIntPipe) chatId: number,
     @CurrentUser('id') userId: number,
-  ): Promise<ChatMessage[]> {
+  ): Promise<ChatMessageDto[]> {
     return this.chatService.getMessages(userId, chatId);
   }
 

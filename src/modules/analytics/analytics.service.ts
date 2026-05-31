@@ -38,8 +38,11 @@ export class AnalyticsService {
       providerModelId?: number;
       from?: string;
       to?: string;
+      timezone?: string;
     },
   ): SelectQueryBuilder<InferenceLog> {
+    const timezone = this.getTimezone(filter);
+
     if (filter.providerId) {
       qb.andWhere('il.providerId = :providerId', {
         providerId: filter.providerId,
@@ -51,12 +54,30 @@ export class AnalyticsService {
       });
     }
     if (filter.from) {
-      qb.andWhere('il.createdOn >= :from', { from: new Date(filter.from) });
+      qb.andWhere(
+        `${this.localCreatedOnExpression()} >= CAST(:from AS timestamp)`,
+        { from: filter.from, timezone },
+      );
     }
     if (filter.to) {
-      qb.andWhere('il.createdOn <= :to', { to: new Date(filter.to) });
+      qb.andWhere(
+        `${this.localCreatedOnExpression()} <= CAST(:to AS timestamp)`,
+        { to: filter.to, timezone },
+      );
     }
     return qb;
+  }
+
+  private getTimezone(filter: { timezone?: string }): string {
+    return filter.timezone ?? 'UTC';
+  }
+
+  private localCreatedOnExpression(): string {
+    return "(il.created_on AT TIME ZONE 'UTC' AT TIME ZONE :timezone)";
+  }
+
+  private bucketExpression(interval: LatencyInterval): string {
+    return `DATE_TRUNC('${interval}', ${this.localCreatedOnExpression()})`;
   }
 
   // ── shared aggregation selects ───────────────────────────────────────────────
@@ -158,13 +179,16 @@ export class AnalyticsService {
   async getLatencyTrend(userId: number, filter: LatencyFilterDto) {
     this.logger.log(`getLatencyTrend — user ${userId}`);
     const interval = filter.interval ?? LatencyInterval.DAY;
+    const timezone = this.getTimezone(filter);
+    const bucketExpression = this.bucketExpression(interval);
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select(`DATE_TRUNC('${interval}', il.created_on)`, 'bucket')
+      .select(bucketExpression, 'bucket')
       .addSelect('AVG(il.latency_ms)', 'averageLatencyMs')
       .addSelect('COUNT(*)', 'totalRequests')
-      .groupBy(`DATE_TRUNC('${interval}', il.created_on)`)
-      .orderBy(`DATE_TRUNC('${interval}', il.created_on)`, 'ASC')
+      .groupBy(bucketExpression)
+      .orderBy(bucketExpression, 'ASC')
+      .setParameter('timezone', timezone)
       .getRawMany<{
         bucket: string;
         averageLatencyMs: string;
@@ -183,9 +207,11 @@ export class AnalyticsService {
   async getThroughput(userId: number, filter: LatencyFilterDto) {
     this.logger.log(`getThroughput — user ${userId}`);
     const interval = filter.interval ?? LatencyInterval.DAY;
+    const timezone = this.getTimezone(filter);
+    const bucketExpression = this.bucketExpression(interval);
 
     const rows = await this.applyFilters(this.baseQuery(userId), filter)
-      .select(`DATE_TRUNC('${interval}', il.created_on)`, 'bucket')
+      .select(bucketExpression, 'bucket')
       .addSelect('COUNT(*)', 'totalRequests')
       .addSelect(
         "SUM(CASE WHEN il.status = 'success' THEN 1 ELSE 0 END)",
@@ -195,8 +221,9 @@ export class AnalyticsService {
         "SUM(CASE WHEN il.status = 'error' THEN 1 ELSE 0 END)",
         'failedRequests',
       )
-      .groupBy(`DATE_TRUNC('${interval}', il.created_on)`)
-      .orderBy(`DATE_TRUNC('${interval}', il.created_on)`, 'ASC')
+      .groupBy(bucketExpression)
+      .orderBy(bucketExpression, 'ASC')
+      .setParameter('timezone', timezone)
       .getRawMany<{
         bucket: string;
         totalRequests: string;
@@ -216,6 +243,7 @@ export class AnalyticsService {
 
   async getErrors(userId: number, filter: AnalyticsFilterDto) {
     this.logger.log(`getErrors — user ${userId}`);
+    const timezone = this.getTimezone(filter);
     const errorBase = () =>
       this.applyFilters(this.baseQuery(userId), filter).andWhere(
         "il.status = 'error'",
@@ -235,8 +263,9 @@ export class AnalyticsService {
         .select('il.provider', 'provider')
         .addSelect('il.model', 'model')
         .addSelect('il.errorMessage', 'errorMessage')
-        .addSelect('il.createdOn', 'createdOn')
+        .addSelect(this.localCreatedOnExpression(), 'createdOn')
         .orderBy('il.createdOn', 'DESC')
+        .setParameter('timezone', timezone)
         .limit(20)
         .getRawMany<{
           provider: string;

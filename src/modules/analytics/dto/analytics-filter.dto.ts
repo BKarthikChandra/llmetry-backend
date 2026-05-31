@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsInt, IsOptional } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsTimeZone,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -14,8 +20,19 @@ export enum ComparisonType {
 
 class BaseDateFilterDto {
   @ApiPropertyOptional({
+    example: 'Asia/Kolkata',
+    default: 'UTC',
+    description:
+      'IANA timezone used for date range filtering and time-based analytics buckets',
+  })
+  @IsOptional()
+  @IsTimeZone()
+  timezone?: string;
+
+  @ApiPropertyOptional({
     example: '2025-01-01',
-    description: 'Start of date range (ISO 8601)',
+    description:
+      'Start of date range (ISO 8601), interpreted in timezone when provided',
   })
   @IsOptional()
   @IsDateString()
@@ -23,7 +40,8 @@ class BaseDateFilterDto {
 
   @ApiPropertyOptional({
     example: '2025-12-31',
-    description: 'End of date range (ISO 8601)',
+    description:
+      'End of date range (ISO 8601), interpreted in timezone when provided',
   })
   @IsOptional()
   @IsDateString()

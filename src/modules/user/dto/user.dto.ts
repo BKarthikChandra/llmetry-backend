@@ -54,11 +54,18 @@ export class ChatSummaryDto {
   @ApiProperty()
   chatId!: number;
 
-  @ApiProperty()
-  createdOn!: Date;
+  @ApiProperty({
+    description: 'Chat creation timestamp as stored in the database.',
+    example: '2026-05-31T20:31:47.089Z',
+  })
+  createdOn!: string;
 
-  @ApiProperty()
-  lastActivityAt!: Date | null;
+  @ApiProperty({
+    nullable: true,
+    description: 'Latest chat message timestamp as stored in the database.',
+    example: '2026-05-31T20:31:47.089Z',
+  })
+  lastActivityAt!: string | null;
 
   @ApiProperty({ nullable: true })
   title!: string | null;

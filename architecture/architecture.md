@@ -29,7 +29,7 @@ Model Management to list and add models per provider using a 3-level cache: in-m
 
 Chat Interface with multi-session support, rolling summarization after 20 messages, and full inference logging on every request.
 
-Analytics Dashboard with filters for provider, model, and date range covering request totals, token usage, latency, throughput, and error logs.
+Analytics Dashboard with filters for provider, model, date range, and timezone covering request totals, token usage, latency, throughput, and error logs.
 
 
 API Routes
@@ -71,15 +71,17 @@ DELETE /chat/:chatId soft-deletes a chat.
 
 Analytics
 
-All endpoints require JWT and accept optional filters: providerId, providerModelId, from, and to in ISO 8601 format.
+All endpoints require JWT and accept optional filters: providerId, providerModelId, from, to, and timezone. The from and to values use ISO 8601 format. The timezone value uses an IANA timezone such as Asia/Kolkata and defaults to UTC.
+
+Inference log timestamps are stored in UTC. Analytics APIs convert UTC timestamps into the requested timezone before applying date range filters, hourly or daily bucketing, and timestamped reporting.
 
 GET /analytics/overview returns aggregate totals for requests, tokens, average latency, and error count.
 
 GET /analytics/comparison returns metrics grouped by provider or model.
 
-GET /analytics/latency returns average latency bucketed by hour or day.
+GET /analytics/latency returns average latency bucketed by hour or day in the requested timezone.
 
-GET /analytics/throughput returns request volume bucketed by hour or day.
+GET /analytics/throughput returns request volume bucketed by hour or day in the requested timezone.
 
 GET /analytics/errors returns error counts by provider and the 20 most recent errors.
 
