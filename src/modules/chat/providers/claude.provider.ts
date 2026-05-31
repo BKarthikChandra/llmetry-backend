@@ -49,6 +49,56 @@ export class ClaudeProvider implements ILlmProvider {
     }
   }
 
+  async chatStream(
+    messages: LlmMessage[],
+    model: string,
+    apiKey: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<LlmChatResult> {
+    const start = Date.now();
+    try {
+      const client = new Anthropic({ apiKey });
+      const stream = client.messages.stream({
+        model,
+        max_tokens: 4096,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      });
+      let fullText = '';
+      for await (const event of stream) {
+        if (
+          event.type === 'content_block_delta' &&
+          event.delta.type === 'text_delta'
+        ) {
+          const delta = event.delta.text;
+          fullText += delta;
+          onChunk(delta);
+        }
+      }
+      const finalMessage = await stream.finalMessage();
+      const inputTokens = finalMessage.usage.input_tokens;
+      const outputTokens = finalMessage.usage.output_tokens;
+      return {
+        text: fullText,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        latencyMs: Date.now() - start,
+        status: 'success',
+        errorMessage: null,
+      };
+    } catch (err) {
+      return {
+        text: '',
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        latencyMs: Date.now() - start,
+        status: 'error',
+        errorMessage: (err as Error).message,
+      };
+    }
+  }
+
   async summarize(
     prompt: string,
     model: string,

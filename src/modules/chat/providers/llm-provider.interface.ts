@@ -19,5 +19,11 @@ export interface ILlmProvider {
     model: string,
     apiKey: string,
   ): Promise<LlmChatResult>;
+  chatStream(
+    messages: LlmMessage[],
+    model: string,
+    apiKey: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<LlmChatResult>;
   summarize(prompt: string, model: string, apiKey: string): Promise<string>;
 }

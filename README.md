@@ -40,7 +40,7 @@ Provider Management to register API keys per provider with live validation again
 
 Model Management to configure specific models per provider, validated against the provider's model catalog.
 
-Chat with multi-session support, conversation history, and rolling summarization for long chats.
+Chat with multi-session support, conversation history, rolling summarization for long chats, and SSE streaming for real-time token-by-token responses.
 
 Analytics with per-user inference logs covering token usage, latency, error rates, throughput, and provider comparisons.
 

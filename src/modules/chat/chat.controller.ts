@@ -7,7 +7,9 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
 import {
   ApiBearerAuth,
@@ -86,6 +88,55 @@ export class ChatController {
     @Query('chatId', new ParseIntPipe({ optional: true })) chatId?: number,
   ): Promise<{ response: string; chatId: number }> {
     return this.chatService.sendMessage(userId, modelId, dto.message, chatId);
+  }
+
+  @Post('/:modelId/send/stream')
+  @ApiOperation({
+    summary: 'Stream AI model response via SSE',
+    description:
+      'Sends a user message and streams the response as Server-Sent Events. ' +
+      'Events: `delta` (text chunk), `done` (final stats + chatId), `error` (on failure).',
+  })
+  @ApiParam({ name: 'modelId', type: Number, example: 1 })
+  @ApiQuery({ name: 'chatId', required: false, type: Number, example: 42 })
+  @ApiResponse({
+    status: 200,
+    description:
+      'SSE stream — event: delta | done | error',
+    schema: {
+      example:
+        'event: delta\ndata: {"chunk":"Hello"}\n\nevent: done\ndata: {"chatId":42,"inputTokens":10,"outputTokens":20,"totalTokens":30,"latencyMs":1200}\n\n',
+    },
+  })
+  async sendMessageStream(
+    @Param('modelId', ParseIntPipe) modelId: number,
+    @CurrentUser('id') userId: number,
+    @Body() dto: SendMessageDto,
+    @Query('chatId', new ParseIntPipe({ optional: true })) chatId: number | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    try {
+      const result = await this.chatService.sendMessageStream(
+        userId,
+        modelId,
+        dto.message,
+        chatId,
+        (chunk: string) =>
+          res.write(`event: delta\ndata: ${JSON.stringify({ chunk })}\n\n`),
+      );
+      res.write(`event: done\ndata: ${JSON.stringify(result)}\n\n`);
+    } catch (err) {
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ message: (err as Error).message })}\n\n`,
+      );
+    } finally {
+      res.end();
+    }
   }
 
   @Delete('/:chatId')
