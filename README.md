@@ -2,11 +2,6 @@ LLMetry Backend
 
 A NestJS REST API that acts as a unified gateway for multiple LLM providers. Users bring their own API keys, configure models, and send chat messages through a single interface. All inference calls are logged for analytics regardless of outcome.
 
-Live demo: https://llmetry-frontend-1.onrender.com/login
-
-Demo credentials: demo@llmetry.com and demo@123
-
-Note: The backend is hosted on Render's free tier and may take around 30 seconds on the first request due to cold start.
 
 API documentation via Swagger is available at /api when the server is running.
 
